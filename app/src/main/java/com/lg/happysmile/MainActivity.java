@@ -13,6 +13,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Toast;
 
@@ -37,6 +38,9 @@ public class MainActivity extends AppCompatActivity implements TabLayout.OnTabSe
     private ConnectivityManager manager;
     //显示状态
     public static boolean state = true;
+    private long exitTime = 0;
+    //网络是否可用
+    public static boolean isOk;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,15 +55,21 @@ public class MainActivity extends AppCompatActivity implements TabLayout.OnTabSe
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            //获取连接信息
-            manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo activeNetInfo = manager.
-                    getActiveNetworkInfo();
-            if (activeNetInfo != null) {
-                isNetworkAvailable();
-            }else {
-                Toast.makeText(MainActivity.this,"请检查网络连接！",Toast.LENGTH_SHORT).show();
+            try {
+                //获取连接信息
+                manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                // 获取NetworkInfo对象
+                NetworkInfo networkinfo = manager.getActiveNetworkInfo();
+
+                if (networkinfo != null || networkinfo.isAvailable()) {
+                    isOk=true;
+                    isNetworkAvailable();
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            isOk = false;
         }
     };
 
@@ -86,6 +96,19 @@ public class MainActivity extends AppCompatActivity implements TabLayout.OnTabSe
         } else if (sp.getString("state", null).equals("false"))
             state = true;
 
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (System.currentTimeMillis() - exitTime > 2000) {
+                Toast.makeText(MainActivity.this, "再点我就走喽！", Toast.LENGTH_SHORT).show();
+                exitTime = System.currentTimeMillis();
+            } else {
+                return super.onKeyDown(keyCode, event);
+            }
+        }
+        return true;
     }
 
     @Override
